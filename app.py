@@ -2,18 +2,23 @@ import streamlit as st
 import pickle
 import numpy as np
 
-# Load trained model
+# -----------------------------
+# Load the trained model
+# -----------------------------
 with open("model.pkl", "rb") as file:
     model = pickle.load(file)
 
-# App title
+# -----------------------------
+# App UI
+# -----------------------------
+st.set_page_config(page_title="Startup Profit Predictor", page_icon="💼", layout="centered")
 st.title("💼 Startup Profit Predictor")
 
 st.markdown("""
 <style>
     body {
-        background-color: #f0f4f8;
-        color: #333333;
+        background-color: #f4f6fa;
+        color: #333;
         font-family: 'Segoe UI', sans-serif;
     }
     .stButton>button {
@@ -31,26 +36,31 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.header("Enter the following startup details:")
+st.subheader("Enter Startup Details:")
 
-# Input fields
-rd = st.number_input("R&D Spend", min_value=0.0, step=1000.0)
-admin = st.number_input("Administration", min_value=0.0, step=1000.0)
-marketing = st.number_input("Marketing Spend", min_value=0.0, step=1000.0)
-state = st.selectbox("State", ("New York", "California", "Florida"))
+# -----------------------------
+# Input Fields
+# -----------------------------
+rd = st.number_input("R&D Spend ($)", min_value=0.0, step=1000.0)
+admin = st.number_input("Administration ($)", min_value=0.0, step=1000.0)
+marketing = st.number_input("Marketing Spend ($)", min_value=0.0, step=1000.0)
+state = st.selectbox("Select State", ("New York", "California", "Florida"))
 
-# One-hot encoding for state
-state_newyork = 1 if state == "New York" else 0
-state_california = 1 if state == "California" else 0
-state_florida = 1 if state == "Florida" else 0
+# -----------------------------
+# One-hot encoding (drop_first=True → 2 columns only)
+# -----------------------------
+if state == "New York":
+    state_california, state_florida = 0, 0
+elif state == "California":
+    state_california, state_florida = 1, 0
+else:  # Florida
+    state_california, state_florida = 0, 1
 
+# -----------------------------
 # Predict button
-if st.button("Predict Profit"):
-    # Arrange input data in same order used during training
-    input_data = np.array([[rd, admin, marketing, state_newyork, state_california, state_florida]])
-    
-    # Predict
-    prediction = model.predict(input_data)
-    
-    # Display result
-    st.success(f"💰 Predicted Profit: ${prediction[0]:,.2f}")
+# -----------------------------
+if st.button("Predict Profit 💰"):
+    # Order: [R&D, Admin, Marketing, State_California, State_Florida]
+    x = np.array([[rd, admin, marketing, state_california, state_florida]])
+    prediction = model.predict(x)
+    st.success(f"Predicted Profit: ${prediction[0]:,.2f}")
